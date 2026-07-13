@@ -1,0 +1,674 @@
+<!-- Developer Muffler -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnlockNet Admin</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        
+        .login-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a0a 0%, #0f1a0f 100%);
+        }
+        .login-box {
+            background: #111111;
+            border: 1px solid #2a2a2a;
+            border-radius: 24px;
+            padding: 40px 36px;
+            max-width: 380px;
+            width: 100%;
+            box-shadow: 0 0 40px rgba(0,204,68,0.08);
+        }
+        .login-box .logo {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 800;
+            color: #00cc44;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        .login-box .logo span { color: #e0e0e0; font-weight: 400; }
+        .login-box .sub {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+        .login-box .sub i { color: #00cc44; }
+        .login-box input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            color: #e0e0e0;
+            font-size: 15px;
+            transition: all 0.3s;
+            margin-bottom: 16px;
+        }
+        .login-box input:focus { outline: none; border-color: #00cc44; }
+        .login-box input::placeholder { color: #555; }
+        .login-box .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #00cc44, #009933);
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .login-box .btn-login:hover { transform: scale(0.98); opacity: 0.9; }
+        .login-box .btn-login i { margin-right: 8px; }
+        .login-error {
+            color: #ff4444;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 12px;
+            display: none;
+        }
+        .login-error i { margin-right: 6px; }
+        
+        #adminPanel { display: none; }
+        
+        .sidebar {
+            width: 220px;
+            height: 100vh;
+            background: #111111;
+            padding: 24px 16px;
+            position: fixed;
+            border-right: 1px solid #2a2a2a;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .sidebar .logo { font-size: 24px; font-weight: 800; color: #00cc44; letter-spacing: 1px; margin-bottom: 30px; padding-left: 8px; }
+        .sidebar .logo span { color: #e0e0e0; font-weight: 400; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #888;
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .nav-item:hover { background: rgba(0,204,68,0.08); color: #e0e0e0; }
+        .nav-item.active { background: rgba(0,204,68,0.12); color: #00cc44; }
+        .nav-item i { font-size: 20px; width: 24px; color: #00cc44; }
+        .nav-item.active i { color: #00cc44; }
+        .logout { margin-top: 40px; border-top: 1px solid #2a2a2a; padding-top: 16px; }
+        .main {
+            margin-left: 220px;
+            padding: 24px 32px;
+            max-width: calc(100% - 220px);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .header h1 { font-size: 28px; font-weight: 700; }
+        .header h1 i { color: #00cc44; margin-right: 8px; }
+        .header-time { color: #666; font-size: 14px; }
+        .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .card {
+            background: #111111;
+            border: 1px solid #2a2a2a;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+        }
+        .card-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #e0e0e0; }
+        .card-title i { color: #00cc44; margin-right: 8px; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: #111111;
+            border: 1px solid #2a2a2a;
+            border-radius: 16px;
+            padding: 16px 20px;
+        }
+        .stat-card i { font-size: 24px; color: #00cc44; margin-bottom: 8px; display: block; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #00cc44; }
+        .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            background: #111111;
+            border: 1px solid #2a2a2a;
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            height: 280px;
+        }
+        .chart-container h4 { color: #888; font-size: 14px; margin-bottom: 12px; font-weight: 500; }
+        .chart-container h4 i { color: #00cc44; margin-right: 6px; }
+        .chart-container canvas { max-height: 200px; max-width: 100%; }
+        .tops-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .top-card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #2a2a2a;
+        }
+        .top-card .place {
+            display: inline-block;
+            background: #00cc44;
+            color: #000;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 2px 10px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .top-card .place i { margin-right: 4px; }
+        .top-card .entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #1a1a1a;
+            font-size: 14px;
+        }
+        .top-card .entry .pos { color: #666; }
+        .top-card .entry .val { color: #00cc44; font-weight: 600; }
+        .top-card .empty { color: #666; padding: 12px 0; text-align: center; }
+        .top-filter {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .top-filter label { color: #888; font-size: 14px; }
+        .top-filter select {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: #e0e0e0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .top-filter select:focus { outline: none; border-color: #00cc44; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; padding: 10px 12px; color: #666; font-weight: 500; border-bottom: 1px solid #2a2a2a; }
+        td { padding: 10px 12px; border-bottom: 1px solid #1a1a1a; }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-badge.active { background: rgba(0,204,68,0.2); color: #00cc44; }
+        .status-badge.inactive { background: rgba(255,68,68,0.15); color: #ff4444; }
+        .status-badge.pending { background: rgba(255,204,0,0.15); color: #facc15; }
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar input, .filter-bar select {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+        .filter-bar input:focus, .filter-bar select:focus { outline: none; border-color: #00cc44; }
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .btn i { margin-right: 6px; }
+        .btn-green { background: linear-gradient(135deg, #00cc44, #009933); color: #000; }
+        .btn-green:hover { transform: scale(0.97); }
+        .btn-gray { background: #2a2a2a; color: #888; }
+        .btn-gray:hover { background: #333; }
+        .btn-red { background: #ff4444; color: #fff; }
+        .btn-red:hover { background: #cc3333; }
+        .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 450px;
+            width: 90%;
+        }
+        .modal h3 { margin-bottom: 16px; }
+        .modal h3 i { color: #00cc44; margin-right: 8px; }
+        .modal .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #1a1a1a; }
+        .modal .info-label { color: #666; }
+        .modal .info-value { color: #e0e0e0; }
+        .modal input, .modal select {
+            width: 100%;
+            padding: 10px;
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #e0e0e0;
+            margin-bottom: 12px;
+        }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
+        .modal-actions .btn { min-width: 100px; }
+        .servers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .server-card { background: #1a1a1a; border-radius: 12px; padding: 16px; border: 1px solid #2a2a2a; }
+        .server-card.online { border-color: #00cc44; }
+        .server-card.offline { border-color: #ff4444; }
+        .server-card i { margin-right: 6px; }
+        @media (max-width: 1024px) { .charts-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; padding: 16px 8px; }
+            .sidebar .logo { font-size: 18px; text-align: center; }
+            .sidebar .logo span { display: none; }
+            .nav-item span { display: none; }
+            .main { margin-left: 60px; padding: 16px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .tops-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .tops-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-page" id="loginPage">
+    <div class="login-box">
+        <div class="logo">UV<span>Admin</span></div>
+        <div class="sub"><i class="bx bx-lock-alt"></i> Вход в панель управления</div>
+        <input type="password" id="passwordInput" placeholder="Введите пароль..." onkeydown="if(event.key==='Enter') login()">
+        <button class="btn-login" onclick="login()"><i class="bx bx-log-in"></i> Войти</button>
+        <div class="login-error" id="loginError"><i class="bx bx-error-circle"></i> Неверный пароль</div>
+    </div>
+</div>
+
+<div id="adminPanel">
+
+<div class="sidebar">
+    <div class="logo">UV<span>Admin</span></div>
+    <nav>
+        <a class="nav-item active" data-page="dashboard"><i class="bx bx-grid-alt"></i><span>Дашборд</span></a>
+        <a class="nav-item" data-page="users"><i class="bx bx-user"></i><span>Пользователи</span></a>
+        <a class="nav-item" data-page="servers"><i class="bx bx-server"></i><span>Серверы</span></a>
+        <a class="nav-item" data-page="payments"><i class="bx bx-credit-card"></i><span>Платежи</span></a>
+        <a class="nav-item" data-page="top"><i class="bx bx-trophy"></i><span>Топы</span></a>
+        <div class="logout"><a class="nav-item" id="logoutBtn" onclick="logout()"><i class="bx bx-log-out"></i><span>Выйти</span></a></div>
+    </nav>
+</div>
+
+<div class="main" id="mainContent">
+
+<div id="page-dashboard">
+    <div class="header"><h1><i class="bx bx-grid-alt"></i> Панель управления</h1><div class="header-time" id="currentTime"></div></div>
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><i class="bx bx-user"></i><div class="stat-value" id="totalUsers">0</div><div class="stat-label">Всего пользователей</div></div>
+        <div class="stat-card"><i class="bx bx-check-circle"></i><div class="stat-value" id="activeUsers">0</div><div class="stat-label">Активных подписок</div></div>
+        <div class="stat-card"><i class="bx bx-money"></i><div class="stat-value" id="todayRevenue">0 ₽</div><div class="stat-label">Доход сегодня</div></div>
+        <div class="stat-card"><i class="bx bx-calendar"></i><div class="stat-value" id="monthRevenue">0 ₽</div><div class="stat-label">Доход за месяц</div></div>
+        <div class="stat-card"><i class="bx bx-trending-up"></i><div class="stat-value" id="totalRevenue">0 ₽</div><div class="stat-label">Всего заработано</div></div>
+    </div>
+    <div class="charts-grid">
+        <div class="chart-container"><h4><i class="bx bx-line-chart"></i> Доход по дням</h4><canvas id="revenueChart"></canvas></div>
+        <div class="chart-container"><h4><i class="bx bx-group"></i> Активные пользователи</h4><canvas id="activeUsersChart"></canvas></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="bx bx-server"></i> Статус серверов</div><div class="servers-grid" id="serversGrid"></div></div>
+</div>
+
+<div id="page-users" style="display:none;">
+    <div class="header"><h1><i class="bx bx-user"></i> Пользователи</h1><div class="header-actions"><span style="color:#666;font-size:13px;" id="usersCount">0</span><button class="btn btn-green" onclick="loadUsers()"><i class="bx bx-refresh"></i> Обновить</button></div></div>
+    <div class="filter-bar">
+        <input type="text" id="searchUser" placeholder="Поиск ID или имени..." oninput="loadUsers()">
+        <select id="filterStatus" onchange="loadUsers()"><option value="all">Все</option><option value="active">Активные</option><option value="inactive">Неактивные</option></select>
+        <select id="filterTariff" onchange="loadUsers()"><option value="all">Все тарифы</option><option value="LIMIT">LIMIT</option><option value="UNLIMIT">UNLIMIT</option></select>
+        <button class="btn btn-gray" onclick="resetFilters()"><i class="bx bx-undo"></i> Сбросить</button>
+    </div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Имя</th><th>Тариф</th><th>Статус</th><th>Подписка до</th><th>Устройств</th><th>Действие</th></tr></thead><tbody id="usersTable"></tbody></table></div></div>
+</div>
+
+<div id="page-servers" style="display:none;">
+    <div class="header"><h1><i class="bx bx-server"></i> Серверы</h1><button class="btn btn-green" onclick="loadServers()"><i class="bx bx-refresh"></i> Обновить</button></div>
+    <div class="card"><div class="servers-grid" id="serversFullGrid"></div></div>
+</div>
+
+<div id="page-payments" style="display:none;">
+    <div class="header"><h1><i class="bx bx-credit-card"></i> История платежей</h1><div class="header-actions"><span style="color:#666;font-size:13px;" id="paymentsTotal">0 ₽</span><button class="btn btn-green" onclick="loadPayments()"><i class="bx bx-refresh"></i> Обновить</button></div></div>
+    <div class="filter-bar">
+        <input type="text" id="searchPayment" placeholder="Поиск..." oninput="loadPayments()">
+        <select id="filterPaymentStatus" onchange="loadPayments()"><option value="all">Все статусы</option><option value="success">Успешные</option><option value="pending">Ожидают</option><option value="failed">Отклонённые</option></select>
+        <select id="filterPaymentPeriod" onchange="loadPayments()"><option value="all">За всё время</option><option value="today">Сегодня</option><option value="week">За неделю</option><option value="month">За месяц</option></select>
+    </div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Тариф</th><th>Статус</th><th>Дата</th></tr></thead><tbody id="paymentsTable"></tbody></table></div></div>
+</div>
+
+<div id="page-top" style="display:none;">
+    <div class="header"><h1><i class="bx bx-trophy"></i> Топ пользователей</h1><div class="header-actions"><button class="btn btn-green" onclick="loadTops()"><i class="bx bx-refresh"></i> Обновить</button></div></div>
+    <div class="top-filter">
+        <label><i class="bx bx-calendar"></i> Период:</label>
+        <select id="topPeriod" onchange="loadTops()">
+            <option value="week">За неделю</option>
+            <option value="month" selected>За месяц</option>
+            <option value="all">За всё время</option>
+        </select>
+    </div>
+    <div class="tops-grid" id="topsGrid"></div>
+</div>
+
+</div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal"><h3><i class="bx bx-edit"></i> Редактирование</h3><div id="modalBody"></div><div class="modal-actions"><button class="btn btn-gray" onclick="closeModal()"><i class="bx bx-x"></i> Отмена</button><button class="btn btn-green" id="modalConfirm" onclick="saveUserEdit()"><i class="bx bx-check"></i> Сохранить</button></div></div>
+</div>
+
+<script>
+function login() {
+    const input = document.getElementById('passwordInput').value;
+    const inputHash = CryptoJS.SHA256(input).toString(CryptoJS.enc.Hex);
+    
+    let savedHash = localStorage.getItem('adminPasswordHash');
+    if (!savedHash) {
+       
+        const correctHash = CryptoJS.SHA256("Fankashne_06").toString(CryptoJS.enc.Hex);
+        localStorage.setItem('adminPasswordHash', correctHash);
+        savedHash = correctHash;
+    }
+    
+    if (inputHash === savedHash) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('loginError').style.display = 'none';
+        loadDashboard();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+    }
+}
+
+function logout() {
+    if (confirm('Выйти из панели управления?')) {
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('loginPage').style.display = 'flex';
+        document.getElementById('passwordInput').value = '';
+    }
+}
+
+let appData = {
+    stats: { totalUsers: 0, activeUsers: 0, todayRevenue: 0, monthRevenue: 0, totalRevenue: 0 },
+    servers: [],
+    users: [],
+    payments: []
+};
+
+let editingUserId = null;
+let revenueChart = null;
+let activeChart = null;
+
+function initCharts() {
+    const ctx1 = document.getElementById('revenueChart').getContext('2d');
+    revenueChart = new Chart(ctx1, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Доход, ₽', data: [], borderColor: '#00cc44', backgroundColor: 'rgba(0,204,68,0.1)', fill: true, tension: 0.3, pointRadius: 2 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#888' } } }, scales: { x: { grid: { color: '#1a1a1a' }, ticks: { color: '#666' } }, y: { grid: { color: '#1a1a1a' }, ticks: { color: '#666' } } } }
+    });
+    const ctx2 = document.getElementById('activeUsersChart').getContext('2d');
+    activeChart = new Chart(ctx2, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: 'Активные пользователи', data: [], backgroundColor: 'rgba(0,204,68,0.6)', borderColor: '#00cc44', borderWidth: 1, borderRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#888' } } }, scales: { x: { grid: { color: '#1a1a1a' }, ticks: { color: '#666' } }, y: { grid: { color: '#1a1a1a' }, ticks: { color: '#666' } } } }
+    });
+}
+
+function updateTime() {
+    document.getElementById('currentTime').textContent = new Date().toLocaleString('ru-RU');
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+function getStatusBadge(status) {
+    const map = {
+        'success': '<span class="status-badge active"><i class="bx bx-check-circle"></i> Успешно</span>',
+        'pending': '<span class="status-badge pending"><i class="bx bx-time"></i> Ожидает</span>',
+        'failed': '<span class="status-badge inactive"><i class="bx bx-x-circle"></i> Отклонён</span>'
+    };
+    return map[status] || status;
+}
+
+function renderServers(container, servers) {
+    if (!servers || servers.length === 0) { container.innerHTML = '<div style="color:#666;padding:20px;text-align:center;"><i class="bx bx-server"></i> Серверы не добавлены</div>'; return; }
+    container.innerHTML = servers.map(s => `
+        <div class="server-card ${s.online ? 'online' : 'offline'}">
+            <div style="font-weight:600;">${s.name}</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:4px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:${s.online ? '#00cc44' : '#ff4444'};display:inline-block;"></span>
+                ${s.online ? '<i class="bx bx-check-circle" style="color:#00cc44;"></i> В работе' : '<i class="bx bx-x-circle" style="color:#ff4444;"></i> Недоступен'}
+            </div>
+            <div style="font-size:12px;color:#666;margin-top:4px;"><i class="bx bx-user"></i> ${s.clients || 0} клиентов</div>
+        </div>
+    `).join('');
+}
+
+function renderUsers(container, users) {
+    if (!users || users.length === 0) { document.getElementById('usersCount').textContent = '0 пользователей'; container.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;"><i class="bx bx-user"></i> Нет пользователей</td></tr>'; return; }
+    document.getElementById('usersCount').textContent = users.length + ' пользователей';
+    container.innerHTML = users.map(u => `
+        <tr>
+            <td>${u.id}</td>
+            <td>${u.name}</td>
+            <td><span style="color:${u.tariff === 'LIMIT' ? '#facc15' : '#00cc44'};">${u.tariff}</span></td>
+            <td><span class="status-badge ${u.active ? 'active' : 'inactive'}">${u.active ? '<i class="bx bx-check-circle"></i> Активен' : '<i class="bx bx-x-circle"></i> Неактивен'}</span></td>
+            <td>${u.subscription || '—'}</td>
+            <td>${u.devices || 0}</td>
+            <td><button class="btn btn-green btn-sm" onclick="openEditModal(${u.id})"><i class="bx bx-edit"></i> Правка</button></td>
+        </tr>
+    `).join('');
+}
+
+function loadUsers() {
+    let filtered = [...appData.users];
+    const search = document.getElementById('searchUser').value.toLowerCase().trim();
+    const statusFilter = document.getElementById('filterStatus').value;
+    const tariffFilter = document.getElementById('filterTariff').value;
+    if (search) filtered = filtered.filter(u => String(u.id).includes(search) || u.name.toLowerCase().includes(search));
+    if (statusFilter === 'active') filtered = filtered.filter(u => u.active);
+    else if (statusFilter === 'inactive') filtered = filtered.filter(u => !u.active);
+    if (tariffFilter !== 'all') filtered = filtered.filter(u => u.tariff === tariffFilter);
+    renderUsers(document.getElementById('usersTable'), filtered);
+}
+
+function resetFilters() {
+    document.getElementById('searchUser').value = '';
+    document.getElementById('filterStatus').value = 'all';
+    document.getElementById('filterTariff').value = 'all';
+    loadUsers();
+}
+
+function loadServers() { renderServers(document.getElementById('serversFullGrid'), appData.servers); }
+
+function loadPayments() {
+    let filtered = [...appData.payments];
+    const search = document.getElementById('searchPayment').value.toLowerCase().trim();
+    const statusFilter = document.getElementById('filterPaymentStatus').value;
+    const periodFilter = document.getElementById('filterPaymentPeriod').value;
+    if (search) filtered = filtered.filter(p => String(p.id).includes(search) || p.user_name.toLowerCase().includes(search));
+    if (statusFilter !== 'all') filtered = filtered.filter(p => p.status === statusFilter);
+    if (periodFilter !== 'all') {
+        const now = new Date();
+        filtered = filtered.filter(p => {
+            const d = new Date(p.date);
+            if (periodFilter === 'today') return d.toDateString() === now.toDateString();
+            if (periodFilter === 'week') { const w = new Date(); w.setDate(w.getDate()-7); return d >= w; }
+            if (periodFilter === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            return true;
+        });
+    }
+    const total = filtered.reduce((s, p) => s + (p.status === 'success' ? p.amount : 0), 0);
+    document.getElementById('paymentsTotal').textContent = total + ' ₽';
+    filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+    document.getElementById('paymentsTable').innerHTML = filtered.length === 0 ?
+        '<tr><td colspan="6" style="text-align:center;color:#666;"><i class="bx bx-credit-card"></i> Нет платежей</td></tr>' :
+        filtered.map(p => `<tr><td>#${p.id}</td><td>${p.user_name}</td><td><strong>${p.amount} ₽</strong></td><td>${p.tariff}</td><td>${getStatusBadge(p.status)}</td><td>${p.date}</td></tr>`).join('');
+}
+
+function loadTops() {
+    const period = document.getElementById('topPeriod').value;
+    let filtered = [...appData.users];
+    if (period === 'week') { const d = new Date(); d.setDate(d.getDate()-7); filtered = filtered.filter(u => new Date(u.created) >= d); }
+    else if (period === 'month') { const d = new Date(); d.setMonth(d.getMonth()-1); filtered = filtered.filter(u => new Date(u.created) >= d); }
+    const cats = [
+        { key: 'devices', label: 'По доходу', icon: 'bx bx-money', sort: (a,b) => b.devices - a.devices, format: (v) => v + ' уст.' },
+        { key: 'traffic_gb', label: 'По трафику', icon: 'bx bx-data', sort: (a,b) => (b.traffic_gb||0) - (a.traffic_gb||0), format: (v) => v + ' ГБ' },
+        { key: 'referrals', label: 'По приглашениям', icon: 'bx bx-user-plus', sort: (a,b) => b.referrals - a.referrals, format: (v) => v + ' чел.' },
+        { key: 'devices', label: 'По устройствам', icon: 'bx bx-devices', sort: (a,b) => b.devices - a.devices, format: (v) => v + ' уст.' }
+    ];
+    document.getElementById('topsGrid').innerHTML = cats.map(cat => {
+        const sorted = [...filtered].filter(u => u[cat.key] > 0).sort(cat.sort).slice(0, 5);
+        return `<div class="top-card"><div class="place"><i class="${cat.icon}"></i> ${cat.label}</div>${sorted.length === 0 ? '<div class="empty"><i class="bx bx-bar-chart"></i> Нет данных</div>' : sorted.map((u,i) => `<div class="entry"><span class="pos">${i+1}. ${u.name}</span><span class="val">${cat.format(u[cat.key])}</span></div>`).join('')}</div>`;
+    }).join('');
+}
+
+function loadDashboard() {
+    const s = appData.stats;
+    document.getElementById('totalUsers').textContent = s.totalUsers;
+    document.getElementById('activeUsers').textContent = s.activeUsers;
+    document.getElementById('todayRevenue').textContent = s.todayRevenue + ' ₽';
+    document.getElementById('monthRevenue').textContent = s.monthRevenue + ' ₽';
+    document.getElementById('totalRevenue').textContent = s.totalRevenue + ' ₽';
+    renderServers(document.getElementById('serversGrid'), appData.servers);
+    if (!revenueChart || !activeChart) initCharts();
+}
+
+function openEditModal(userId) {
+    const user = appData.users.find(u => u.id === userId);
+    if (!user) return;
+    editingUserId = userId;
+    document.getElementById('modalTitle').textContent = 'Редактирование: ' + user.name;
+    document.getElementById('modalBody').innerHTML = `
+        <div class="info-row"><span class="info-label">ID</span><span class="info-value">${user.id}</span></div>
+        <div class="info-row"><span class="info-label">Имя</span><span class="info-value">${user.name}</span></div>
+        <hr style="border-color:#2a2a2a;margin:12px 0;">
+        <select id="editStatus"><option value="true" ${user.active?'selected':''}><i class="bx bx-check-circle"></i> Активен</option><option value="false" ${!user.active?'selected':''}><i class="bx bx-x-circle"></i> Неактивен</option></select>
+        <select id="editTariff"><option value="LIMIT" ${user.tariff==='LIMIT'?'selected':''}>LIMIT</option><option value="UNLIMIT" ${user.tariff==='UNLIMIT'?'selected':''}>UNLIMIT</option></select>
+        <input type="number" id="editDevices" value="${user.devices||1}" min="1" max="10" placeholder="Устройства">
+        <input type="date" id="editSubscription" value="${user.subscription||''}" placeholder="Подписка до">
+        <input type="number" id="editDays" value="30" min="1" placeholder="Дней +">
+        <button class="btn btn-red" style="width:100%;margin-top:8px;" onclick="deleteUser(${user.id})"><i class="bx bx-trash"></i> Удалить</button>
+    `;
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function saveUserEdit() {
+    const user = appData.users.find(u => u.id === editingUserId);
+    if (!user) return;
+    user.active = document.getElementById('editStatus').value === 'true';
+    user.tariff = document.getElementById('editTariff').value;
+    user.devices = parseInt(document.getElementById('editDevices').value) || 1;
+    const days = parseInt(document.getElementById('editDays').value) || 0;
+    user.subscription = document.getElementById('editSubscription').value || null;
+    if (days > 0 && user.subscription) {
+        const d = new Date(user.subscription);
+        d.setDate(d.getDate() + days);
+        user.subscription = d.toISOString().slice(0,10);
+    } else if (days > 0) {
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        user.subscription = d.toISOString().slice(0,10);
+    }
+    closeModal(); loadUsers(); loadDashboard();
+}
+
+function deleteUser(userId) {
+    if (!confirm('Удалить пользователя?')) return;
+    appData.users = appData.users.filter(u => u.id !== userId);
+    closeModal(); loadUsers(); loadDashboard();
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+    item.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+        const page = this.dataset.page;
+        document.querySelectorAll('[id^="page-"]').forEach(el => el.style.display = 'none');
+        document.getElementById('page-' + page).style.display = 'block';
+        if (page === 'users') loadUsers();
+        else if (page === 'servers') loadServers();
+        else if (page === 'payments') loadPayments();
+        else if (page === 'top') loadTops();
+        else if (page === 'dashboard') loadDashboard();
+    });
+});
+
+setInterval(() => {
+    const active = document.querySelector('.nav-item.active');
+    if (active) {
+        const page = active.dataset.page;
+        if (page === 'users') loadUsers();
+        else if (page === 'servers') loadServers();
+        else if (page === 'payments') loadPayments();
+        else if (page === 'top') loadTops();
+        else if (page === 'dashboard') loadDashboard();
+    }
+}, 30000);
+</script>
+</body>
+</html>
